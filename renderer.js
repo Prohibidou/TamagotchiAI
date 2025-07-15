@@ -77,7 +77,7 @@ function init() {
 
       // Center the model and set initial position
       pet.position.sub(center.multiplyScalar(scale));
-      pet.position.y = screenBounds.bottom + (size.y * scale / 2);
+      pet.position.set(0, 0, 0);
 
       pet.velocity = new THREE.Vector3(0, 0, 0);
       scene.add(pet);
