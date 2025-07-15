@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // --- Global variables ---
-let camera, scene, renderer;
+let camera, scene, renderer, mixer;
+const clock = new THREE.Clock();
 let pet; // This will hold our dragon model
 let screenBounds;
 
@@ -44,9 +45,25 @@ function init() {
   // --- Load the 3D Model ---
   const loader = new GLTFLoader();
   loader.load(
-    './low_poly_dragon.glb',
+    './source/Dragon.glb',
     function (gltf) {
       pet = gltf.scene;
+
+      // --- Animation setup ---
+      mixer = new THREE.AnimationMixer(pet);
+      pet.actionClips = {}; // Use an object to store actions by name
+
+      if (gltf.animations.length > 0) {
+        gltf.animations.forEach(clip => {
+          const action = mixer.clipAction(clip);
+          pet.actionClips[clip.name] = action;
+        });
+
+        // Start the flying animation and keep it running
+        if (pet.actionClips.flying) {
+          pet.actionClips.flying.play();
+        }
+      }
 
       // --- Auto-center and scale the model ---
       const box = new THREE.Box3().setFromObject(pet);
@@ -60,7 +77,7 @@ function init() {
 
       // Center the model and set initial position
       pet.position.sub(center.multiplyScalar(scale));
-      pet.position.y = screenBounds.bottom + (size.y * scale / 2); // Sit on the bottom edge
+      pet.position.y = screenBounds.bottom + (size.y * scale / 2);
 
       pet.velocity = new THREE.Vector3(0, 0, 0);
       scene.add(pet);
@@ -87,8 +104,7 @@ function init() {
 
 // --- Pet's brain ---
 function decideNextAction() {
-  // Ensure pet is loaded before making decisions
-  if (!pet) return;
+  if (!pet || !pet.actionClips) return;
 
   const nextState = Math.random() < 0.3 ? petState.IDLE : petState.FLYING;
   const duration = Math.random() * 4000 + 3000; // 3-7 seconds
@@ -97,12 +113,18 @@ function decideNextAction() {
     case petState.IDLE:
       currentState = petState.IDLE;
       pet.velocity.set(0, 0, 0);
+      // Stop running, play idle
+      if (pet.actionClips.running) pet.actionClips.running.stop();
+      if (pet.actionClips.idle) pet.actionClips.idle.play();
       break;
     case petState.FLYING:
       currentState = petState.FLYING;
-      const angle = Math.random() * 2 * Math.PI; // Random direction
+      const angle = Math.random() * 2 * Math.PI;
       pet.velocity.x = Math.cos(angle) * moveSpeed;
       pet.velocity.y = Math.sin(angle) * moveSpeed;
+      // Stop idle, play running
+      if (pet.actionClips.idle) pet.actionClips.idle.stop();
+      if (pet.actionClips.running) pet.actionClips.running.play();
       break;
   }
 
@@ -113,7 +135,12 @@ function decideNextAction() {
 function animate() {
   requestAnimationFrame(animate);
 
-  // Only animate if the pet model is loaded
+  const delta = clock.getDelta();
+
+  if (mixer) {
+    mixer.update(delta);
+  }
+
   if (pet) {
     // --- Update Position ---
     pet.position.x += pet.velocity.x;
