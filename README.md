@@ -1,5 +1,5 @@
 # TamagotchiAI
-A dragon will fly autonomously in your screen over every aplication.
+A dragon will fly autonomously in your screen over every aplication or windows
 
 # How to install
 
