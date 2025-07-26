@@ -1,7 +1,7 @@
 # TamagotchiAI
 A dragon will fly autonomously in your screen over every aplication or windows
 
-## Demo
+## 🎥Demo
 [[Demo Video]]( https://www.instagram.com/p/DMJcX3AMKp4/  )
 
 
